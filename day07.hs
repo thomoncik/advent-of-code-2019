@@ -105,51 +105,41 @@ programStep (Just cursor, pins, diag, l) = afterAction action cursor l diag pins
       | otherwise = l ! (cursor + number)
 
 runWhileNotHalted :: State -> State
-runWhileNotHalted (Nothing, inputs, outputs, memory) =
-  (Nothing, inputs, outputs, memory)
-runWhileNotHalted (Just cursor, inputs, outputs, memory) =
-  runWhileNotHalted $ programStep (Just cursor, inputs, outputs, memory)
+runWhileNotHalted (Just cursor, inputs, outputs, memory) = runWhileNotHalted $ programStep (Just cursor, inputs, outputs, memory)
+runWhileNotHalted (Nothing, inputs, outputs, memory)     = (Nothing, inputs, outputs, memory)
 
 programOutput :: Program -> [Int] -> [Int]
 programOutput program inputs =
-  reverse $
-  (\(a, b, c, d) -> c) $
-  runWhileNotHalted $
+  reverse . (\(cursor, inputs, outputs, memory) -> outputs) . runWhileNotHalted $
   (programStep (Just 0, inputs, [], (loadProgramToMemory program)))
 
------------------------------------------
+----------------------------------------------------
+signalAfterChain :: Program -> [Int] -> Int
+signalAfterChain program [a, b, c, d, e] =
+  let aResult = programOutput program [a, 0]
+      bResult = programOutput program (b : aResult)
+      cResult = programOutput program (c : bResult)
+      dResult = programOutput program (d : cResult)
+      eResult = programOutput program (e : dResult)
+   in last eResult
 
-signalAfterChain :: [Int] -> Program -> Int
-signalAfterChain settings program = setCompontents settings
-  where
-    setCompontents [a, b, c, d, e] =
-      let aResult = programOutput program [a, 0]
-          bResult = programOutput program (b : aResult)
-          cResult = programOutput program (c : bResult)
-          dResult = programOutput program (d : cResult)
-          eResult = programOutput program (e : dResult)
-       in last eResult
+part1 :: Int
+part1 = maximum (List.map (signalAfterChain input) (permutations [0 .. 4]))
 
-part1 = maximum (List.map (\p -> signalAfterChain p input) (permutations [0 .. 4]))
-
---------------------------
-
-s2 :: [Int] -> [Int] -> Int
-s2 sett prog = calculate sett
-  where
-    calculate [a, b, c, d, e] =
-      let oa = programOutput prog (a : 0 : oe)
-          ob = programOutput prog (b : oa)
-          oc = programOutput prog (c : ob)
-          od = programOutput prog (d : oc)
-          oe = programOutput prog (e : od)
-       in last oe
+----------------------------------------------------
+singalAfterLoopedChain :: Program -> [Int] -> Int
+singalAfterLoopedChain program [a, b, c, d, e] =
+  let aResult = programOutput program (a : 0 : eResult)
+      bResult = programOutput program (b : aResult)
+      cResult = programOutput program (c : bResult)
+      dResult = programOutput program (d : cResult)
+      eResult = programOutput program (e : dResult)
+   in last eResult
 
 part2 :: Int
-part2 = maximum (List.map (\p -> s2 p input) (permutations [5 .. 9]))
+part2 = maximum (List.map (singalAfterLoopedChain input) (permutations [5 .. 9]))
 
----------------------------
-
+----------------------------------------------------
 main :: IO ()
 main = do
   print part1
