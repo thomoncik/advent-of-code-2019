@@ -1,6 +1,4 @@
-module Main
-  ( main
-  ) where
+module Main (main) where
 
 import Data.List as List
 import Data.Map as Map
@@ -23,9 +21,9 @@ data Action
   deriving (Show, Eq)
 
 type Memory = Map.Map Int Int
-
 type Program = [Int]
 
+-- (cursor, input, output, memory)
 type State = (Maybe Int, [Int], [Int], Memory)
 
 input :: Program
@@ -62,56 +60,46 @@ parseToAction x = getAction $ getMode
     e = digitFromRight 0 x
 
 programStep :: State -> State
-programStep (Just cursor, pins, diag, l) = afterAction action cursor l diag pins
+programStep (Just cursor, inputs, outputs, memory)
+  = afterAction action cursor memory outputs inputs
   where
-    afterAction Halt cursor memory outputs inputs =
+    afterAction Halt cursor memory outputs inputs = 
       (Nothing, inputs, outputs, memory)
-    afterAction Output cursor memory outputs inputs =
+    afterAction Output cursor memory outputs inputs = 
       (Just (cursor + 2), inputs, (arg 1 Position) : outputs, memory)
-    afterAction Input cursor memory diag pins =
-      ( Just (cursor + 2)
-      , (tail pins)
-      , diag
-      , (Map.insert (arg 1 Immediate) (head pins) memory))
-    afterAction (Add m1 m2) cursor l diag pins =
-      ( Just (cursor + 4)
-      , pins
-      , diag
-      , (Map.insert (arg 3 Immediate) ((arg 1 m1) + (arg 2 m2)) l))
-    afterAction (Multiply mode1 mode2) cursor l diag pins =
-      ( Just (cursor + 4)
-      , pins
-      , diag
-      , (Map.insert (arg 3 Immediate) ((arg 1 mode1) * (arg 2 mode2)) l))
-    afterAction (JumpTrue mode1 mode2) cursor l diag pins
-      | arg 1 mode1 /= 0 = (Just (arg 2 mode2), pins, diag, l)
-      | otherwise = (Just (cursor + 3), pins, diag, l)
-    afterAction (JumpFalse mode1 mode2) cursor l diag pins
-      | (arg 1 mode1) == 0 = (Just (arg 2 mode2), pins, diag, l)
-      | otherwise = (Just (cursor + 3), pins, diag, l)
-    afterAction (LessThan mode1 mode2) cursor l diag pins
-      | (arg 1 mode1) < (arg 2 mode2) =
-        (Just (cursor + 4), pins, diag, (Map.insert (arg 3 Immediate) 1 l))
-      | otherwise =
-        (Just (cursor + 4), pins, diag, (Map.insert (arg 3 Immediate) 0 l))
-    afterAction (Equals mode1 mode2) cursor l diag pins
-      | (arg 1 mode1) == (arg 2 mode2) =
-        (Just (cursor + 4), pins, diag, (Map.insert (arg 3 Immediate) 1 l))
-      | otherwise =
-        (Just (cursor + 4), pins, diag, (Map.insert (arg 3 Immediate) 0 l))
-    action = parseToAction (l ! cursor)
+    afterAction Input cursor memory outputs inputs =
+      (Just (cursor + 2), (tail inputs), outputs, (Map.insert (arg 1 Immediate) (head inputs) memory))
+    afterAction (Add m1 m2) cursor memory outputs inputs =
+      (Just (cursor + 4), inputs, outputs, (Map.insert (arg 3 Immediate) ((arg 1 m1) + (arg 2 m2)) memory))
+    afterAction (Multiply mode1 mode2) cursor memory outputs inputs =
+      (Just (cursor + 4), inputs, outputs, (Map.insert (arg 3 Immediate) ((arg 1 mode1) * (arg 2 mode2)) memory))
+    afterAction (JumpTrue mode1 mode2) cursor memory outputs inputs
+      | arg 1 mode1 /= 0 = (Just (arg 2 mode2), inputs, outputs, memory)
+      | otherwise        = (Just (cursor + 3), inputs, outputs, memory)
+    afterAction (JumpFalse mode1 mode2) cursor memory outputs inputs
+      | (arg 1 mode1) == 0 = (Just (arg 2 mode2), inputs, outputs, memory)
+      | otherwise          = (Just (cursor + 3), inputs, outputs, memory)
+    afterAction (LessThan mode1 mode2) cursor memory outputs inputs
+      | (arg 1 mode1) < (arg 2 mode2) = (Just (cursor + 4), inputs, outputs, (Map.insert (arg 3 Immediate) 1 memory))
+      | otherwise                     = (Just (cursor + 4), inputs, outputs, (Map.insert (arg 3 Immediate) 0 memory))
+    afterAction (Equals mode1 mode2) cursor memory outputs inputs
+      | (arg 1 mode1) == (arg 2 mode2) = (Just (cursor + 4), inputs, outputs, (Map.insert (arg 3 Immediate) 1 memory))
+      | otherwise                      = (Just (cursor + 4), inputs, outputs, (Map.insert (arg 3 Immediate) 0 memory))
+    action = parseToAction (memory ! cursor)
     arg number mode
-      | mode == Position = l ! (l ! (cursor + number))
-      | otherwise = l ! (cursor + number)
+      | mode == Position = memory ! (memory ! (cursor + number))
+      | otherwise        = memory ! (cursor + number)
 
 runWhileNotHalted :: State -> State
-runWhileNotHalted (Just cursor, inputs, outputs, memory) = runWhileNotHalted $ programStep (Just cursor, inputs, outputs, memory)
-runWhileNotHalted (Nothing, inputs, outputs, memory)     = (Nothing, inputs, outputs, memory)
+runWhileNotHalted (Just cursor, inputs, outputs, memory) 
+  = runWhileNotHalted $ programStep (Just cursor, inputs, outputs, memory)
+runWhileNotHalted (Nothing, inputs, outputs, memory) 
+  = (Nothing, inputs, outputs, memory)
 
 programOutput :: Program -> [Int] -> [Int]
-programOutput program inputs =
-  reverse . (\(cursor, inputs, outputs, memory) -> outputs) . runWhileNotHalted $
-  (programStep (Just 0, inputs, [], (loadProgramToMemory program)))
+programOutput program inputs
+  = reverse . (\(cursor, inputs, outputs, memory) -> outputs) . runWhileNotHalted $
+    (programStep (Just 0, inputs, [], (loadProgramToMemory program)))
 
 ----------------------------------------------------
 signalAfterChain :: Program -> [Int] -> Int
