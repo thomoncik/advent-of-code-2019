@@ -55,6 +55,28 @@ test2 = [
   "..#.....#...###..",
   "..#.#.....#....##"]
 
+test3 = [".#..##.###...#######",
+        "##.############..##.",
+        ".#.######.########.#",
+        ".###.#######.####.#.",
+        "#####.##.#.##.###.##",
+        "..#####..#.#########",
+        "####################",
+        "#.####....###.#.#.##",
+        "##.#################",
+        "#####.##.###..####..",
+        "..######..##.#######",
+        "####.##.####...##..#",
+        ".#####..#.######.###",
+        "##...#.##########...",
+        "#.##########.#######",
+        ".####.#.###.###.#.##",
+        "....##.##.###..#####",
+        ".#.#.###########.###",
+        "#.#.#.#####.####.###",
+        "###.##.####.##.#..##"]
+
+
 colinear :: Coordinates -> Coordinates -> Coordinates -> Bool
 colinear (ax, ay) (bx, by) (cx, cy) =
   (ax * (by - cy) + bx * (cy - ay) + cx * (ay - by)) == 0
@@ -86,15 +108,17 @@ g x =
   where
     s = parse x
 
-part1 = g input -- 207 index
+part1 = maximum $ g input -- 207 index
 
 
 -----------
 
+--List.filter (\(a,b) -> b == 210) (zip [0..] (g test3))
 -- groupBy (\(a,b) (x,y) -> a==x) (f (parse input)) !! 207
 -- st = toList (parse input) !! 207
-qwe = parse test2
-st = toList qwe !! 15
+--qwe = parse test2
+qwe = parse input
+st = toList qwe !! (fst (head (List.filter (\(a,b) -> b == part1) (zip [0..] (g input)))))
 
 z :: Set Coordinates -> [(Coordinates, Coordinates)]
 z s =
@@ -105,7 +129,9 @@ z s =
   ]
 
 pl = sortBy (\(_,(x,y)) (_,(a,b)) -> compare (a,b) (x,y)) (z qwe)
-
+plg = groupBy (\(_,(x,_)) (_,(y,_)) -> x==y)  pl
+part2 = (head (transpose plg)) !! 199
 main :: IO ()
 main = do
-  print $ ""
+  print $ part1
+  print $ part2
