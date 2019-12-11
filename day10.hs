@@ -46,41 +46,6 @@ input =
   , "#..#...##.........#.....##.....#...."
   ]
 
-test1 = [".#..#", ".....", "#####", "....#", "...##"]
-
-test2 = [
-  ".#....#####...#..",
-  "##...##.#####..##",
-  "##...#...#.#####.",
-  "..#.....#...###..",
-  "..#.#.....#....##"]
-
-test3 = [".#..##.###...#######",
-        "##.############..##.",
-        ".#.######.########.#",
-        ".###.#######.####.#.",
-        "#####.##.#.##.###.##",
-        "..#####..#.#########",
-        "####################",
-        "#.####....###.#.#.##",
-        "##.#################",
-        "#####.##.###..####..",
-        "..######..##.#######",
-        "####.##.####...##..#",
-        ".#####..#.######.###",
-        "##...#.##########...",
-        "#.##########.#######",
-        ".####.#.###.###.#.##",
-        "....##.##.###..#####",
-        ".#.#.###########.###",
-        "#.#.#.#####.####.###",
-        "###.##.####.##.#..##"]
-
-
-colinear :: Coordinates -> Coordinates -> Coordinates -> Bool
-colinear (ax, ay) (bx, by) (cx, cy) =
-  (ax * (by - cy) + bx * (cy - ay) + cx * (ay - by)) == 0
-
 zipWith2dIndex :: [[a]] -> [((Double, Double), a)]
 zipWith2dIndex xss =
   [((i, j), x) | (j, xs) <- zip [0 ..] xss, (i, x) <- zip [0 ..] xs]
@@ -100,37 +65,37 @@ f s =
 
 g x =
   List.map
-  List.length
-    (List.map nub
+    List.length
+    (List.map
+       nub
        (List.map
           (List.map snd)
           ((List.groupBy (\(a, b) (x, y) -> a == x) (f s)))))
   where
     s = parse x
 
-part1 = maximum $ g input -- 207 index
-
+part1 = maximum $ g input
 
 -----------
 
---List.filter (\(a,b) -> b == 210) (zip [0..] (g test3))
--- groupBy (\(a,b) (x,y) -> a==x) (f (parse input)) !! 207
--- st = toList (parse input) !! 207
---qwe = parse test2
-qwe = parse input
-st = toList qwe !! (fst (head (List.filter (\(a,b) -> b == part1) (zip [0..] (g input)))))
+best =
+  toList (parse input) !!
+  (fst (head (List.filter (\(a, b) -> b == part1) (zip [0 ..] (g input)))))
 
 z :: Set Coordinates -> [(Coordinates, Coordinates)]
 z s =
-  [ ((x2, y2), ((atan2 (- x + x2) (- y + y2)), ((x - x2)^2 + (y - y2)^2)))
-  | (x, y) <- [st]
+  [ ((x2, y2), ((atan2 (-x + x2) (-y + y2)), ((x - x2) ^ 2 + (y - y2) ^ 2)))
+  | (x, y) <- [best]
   , (x2, y2) <- (toList s)
   , (x, y) /= (x2, y2)
   ]
 
-pl = sortBy (\(_,(x,y)) (_,(a,b)) -> compare (a,b) (x,y)) (z qwe)
-plg = groupBy (\(_,(x,_)) (_,(y,_)) -> x==y)  pl
-part2 = (head (transpose plg)) !! 199
+pl = sortBy (\(_, (x, y)) (_, (a, b)) -> compare (a, b) (x, y)) (z . parse $ input)
+
+plg = groupBy (\(_, (x, _)) (_, (y, _)) -> x == y) pl
+
+part2 = (concat $ transpose plg) !! 199
+
 main :: IO ()
 main = do
   print $ part1
