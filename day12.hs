@@ -40,17 +40,26 @@ gravityOnPos a b
   | a == b = 0
 
 singleGravity :: Int3 -> Int3 -> Int3
-singleGravity (a, b, c) (x, y, z) = (gravityOnPos a x, gravityOnPos b y, gravityOnPos c z)
+singleGravity (a, b, c) (x, y, z) =
+  (gravityOnPos a x, gravityOnPos b y, gravityOnPos c z)
 
 applyVelocity :: (Int3, Int3) -> (Int3, Int3)
 applyVelocity (pos, vel) = (add pos vel, vel)
 
 gravity :: Moons -> Moons
 gravity ((a, av), (b, bv), (c, cv), (d, dv)) =
-  ( (a, av `add` (singleGravity a b) `add` (singleGravity a c) `add` (singleGravity a d))
-  , (b, bv `add` (singleGravity b a) `add` (singleGravity b c) `add` (singleGravity b d))
-  , (c, cv `add` (singleGravity c a) `add` (singleGravity c b) `add` (singleGravity c d))
-  , (d, dv `add` (singleGravity d a) `add` (singleGravity d b) `add` (singleGravity d c)))
+  ( ( a
+    , av `add` (singleGravity a b) `add` (singleGravity a c) `add`
+      (singleGravity a d))
+  , ( b
+    , bv `add` (singleGravity b a) `add` (singleGravity b c) `add`
+      (singleGravity b d))
+  , ( c
+    , cv `add` (singleGravity c a) `add` (singleGravity c b) `add`
+      (singleGravity c d))
+  , ( d
+    , dv `add` (singleGravity d a) `add` (singleGravity d b) `add`
+      (singleGravity d c)))
 
 velocity :: Moons -> Moons
 velocity (a, b, c, d) =
@@ -74,6 +83,37 @@ energyInSystem (a, b, c, d) =
   totalEnergy a + totalEnergy b + totalEnergy c + totalEnergy d
 
 part1 = energyInSystem $ simulate 1000 input
+
+------------
+type MoonsOnPos = ((Int, Int), (Int, Int), (Int, Int), (Int, Int))
+
+gp :: MoonsOnPos -> MoonsOnPos
+gp ((a, av), (b, bv), (c, cv), (d, dv)) =
+  ( (a, av + (gravityOnPos a b) + (gravityOnPos a c) + (gravityOnPos a d))
+  , (b, bv + (gravityOnPos b a) + (gravityOnPos b c) + (gravityOnPos b d))
+  , (c, cv + (gravityOnPos c a) + (gravityOnPos c b) + (gravityOnPos c d))
+  , (d, dv + (gravityOnPos d a) + (gravityOnPos d b) + (gravityOnPos d c)))
+
+vp :: MoonsOnPos -> MoonsOnPos
+vp ((a, av), (b, bv), (c, cv), (d, dv)) =
+  ((a + av, av), (b + bv, bv), (c + cv, cv), (d + dv, dv))
+
+-- each dimension separately
+findCycle :: MoonsOnPos -> Int
+findCycle m = f m (vp . gp $ m) 1
+  where
+    f st moons i
+      | st == moons = i
+      | otherwise = f st (vp . gp $ moons) (i + 1)
+
+part2 :: Moons -> Int
+part2 (((ax, ay, az), (axv, ayv, azv)), ((bx, by, bz), (bxv, byv, bzv)), ((cx, cy, cz), (cxv, cyv, czv)), ((dx, dy, dz), (dxv, dyv, dzv))) =
+  let
+    cyclex = findCycle ((ax, axv), (bx, bxv), (cx, cxv), (dx, dxv))
+    cycley = findCycle ((ay, ayv), (by, byv), (cy, cyv), (dy, dyv))
+    cyclez = findCycle ((az, azv), (bz, bzv), (cz, czv), (dz, dzv))
+  in
+    lcm (lcm cyclex cycley) cyclez
 
 main :: IO ()
 main = do
