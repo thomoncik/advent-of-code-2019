@@ -27,12 +27,13 @@ input2 = concat $ replicate 10000 input
 offset :: Int
 offset = fromDigits $ take 7 input2
 
-w l = scanl1 (\x y -> (x + y) `mod` 10) l
+w l 0 = l
+w l i = w (scanr1 (\x y -> (x + y) `mod` 10) l) (i - 1)
 
-part2 = take 8 $ drop 5979187 input2 -- $ concat $ List.map show (fft input2 100)
+part2 = take 8 $ drop offset (w input2 100) -- $ concat $ List.map show (fft input2 100)
 
 main :: IO ()
 main = do
-  print part1
+  -- print part1
   print part2
   
