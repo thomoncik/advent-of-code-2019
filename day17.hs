@@ -30,6 +30,7 @@ data Action
 data Effect
   = Printed Int
   | Halted
+  | InputGiven
   | InnerAction
   deriving (Show, Eq)
 
@@ -82,7 +83,7 @@ programStep (Just cursor, memory, relativeOffset) input
     afterAction (Output mode1) cursor memory input = 
       (Printed $ arg 1 mode1, (Just (cursor + 2), memory, relativeOffset))
     afterAction (Input mode1) cursor memory input =
-      (InnerAction, (Just (cursor + 2), Map.insert (argWrite 1 mode1) input memory, relativeOffset))
+      (InputGiven, (Just (cursor + 2), Map.insert (argWrite 1 mode1) input memory, relativeOffset))
     afterAction (Add m1 m2 mode3) cursor memory input =
       (InnerAction, (Just (cursor + 4), (Map.insert (argWrite 3 mode3) ((arg 1 m1) + (arg 2 m2)) memory), relativeOffset))
     afterAction (Multiply mode1 mode2 mode3) cursor memory input =
@@ -128,7 +129,27 @@ f str st = foo (run st 0) where
 
 -----------------------------------
 
--- (loadProgramToMemory 2:(drop 1 input))
+-- R,6,L,12,R,6,R,6,L,12,R,6,L,12,R,6,L,8,L,12,R,12,L,10,L,10,L12,R,6,L,8,L,12,R,12,L,10,L,10,L,12,R,6,L,8,L,12,R,12,L,10,L,10,L,12,R,6,L,8,L,12,R,6,L,12,R,6
+
+part2 :: Int -> [Int] -> State -> Int
+part2 str [] st = bar (programStep st 0) where
+  bar (Printed x, s) = part2 x [] s
+  bar (InputGiven, s) = error "No input to give"
+  bar (Halted, _) = str
+  bar (InnerAction, s) = part2 str [] s
+part2 str (i:is) st = foo (programStep st i) (i:is) where
+  foo (Printed x, s) l = part2 x l s
+  foo (InputGiven, s) (l:ls) = part2 str ls s
+  foo (Halted, _) l = str
+  foo (InnerAction, s) l = part2 str l s
+
+mainRoutine = "A,A,C,B,C,B,C,B,C,A\n"
+a = "R,6,L,12,R,6\n"
+b = "R,12,L,10,L,10\n"
+c = "L,12,R,6,L,8,L,12\n"
+debug = "n\n"
+
+providedInput = mainRoutine ++ a ++ b ++ c ++ debug
 
 main :: IO ()
 main = do
@@ -145,4 +166,4 @@ main = do
         (Map.findWithDefault ' ' (x,y) grid) == '#']
   print $ sum $ List.map (\(a,b) -> a*b) a
   -----------------------
-  
+  print $ part2 0 (List.map ord providedInput) (Just 0, loadProgramToMemory (2:(List.drop 1 input)), 0)
