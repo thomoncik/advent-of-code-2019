@@ -1,6 +1,4 @@
-module Main
-  ( main
-  ) where
+module Main (main) where
 
 import Data.Char as Char
 import Data.Function as Function
@@ -8,311 +6,77 @@ import Data.List as List
 import Data.Map as Map
 import Data.Ord as Ord
 import Data.Set as Set
+import Data.Tuple as Tuple
 
 import Debug.Trace as Trace
 
-t3 ="#########\n\
-        \#b.A.@.a#\n\
-        \#########"
-t2 = "########################\n\
-        \#@..............ac.GI.b#\n\
-        \###d#e#f################\n\
-        \###A#B#C################\n\
-        \###g#h#i################\n\
-        \########################"
-t1 = "#################\n\
-      \#i.G..c...e..H.p#\n\
-      \########.########\n\
-      \#j.A..b...f..D.o#\n\
-      \########@########\n\
-      \#k.E..a...g..B.n#\n\
-      \########.########\n\
-      \#l.F..d...h..C.m#\n\
-      \#################"
--- input = "#################################################################################\n\
---         \#..........c#.............E.......#.....#.....#...#.........#...#...............#\n\
---         \#.#########.#.#.#################.#.#####.#.#.#.#.#.#######.#.#.#.#########.#####\n\
---         \#.#...R...#.#.#.#.#.....#.....#.#.#....t#.#.#.#.#.#.#.....#...#...#.......#.....#\n\
---         \###.#####.#.#G#.#.#.#.###.#.#.#.#.#####.###.###.#.#.###.#.###############.#####.#\n\
---         \#...#.....#...#.#...#.....#.#...#.....#.#...#...#.#...#.#p........#...........#.#\n\
---         \#.#####.#######.#####.#####.#########V#.#.###.###.###.#.#######.#.#.#####.#####.#\n\
---         \#.#...#.....#...#...#.....#...#...#...#.#...#...#...#.#.#.....#.#.#.....#.#.....#\n\
---         \#.#.#W#####.#.###.#.#########.#.#.#.###.#.#.###.###.#.###.###.#.#.#.###.###.###.#\n\
---         \#...#.#.#...#.#...#.....#.....#.#...#...#.#...#.#.#.#...#.#...#.#.#...#.#...#.#.#\n\
---         \#####.#.#.###.#.#.#####.#.#.###.#####.###.#.#.#.#.#.###.#.#.###.#.#####.#.###.#.#\n\
---         \#.....#.#...#.#d#.#...#o#.#.#...#.#.....#.#.#.#.#.#...#j#.#x#...#.......#.#.#...#\n\
---         \#.#####.###.#.#.###.#.#.#.###.###.#.###.#.#.#.#.#.###.#.#.#.#.###.#####.#.#.#.###\n\
---         \#.....#...#...#.....#.#.#...#.#.....#...#.#.#.#.....#.#...#...#...#...#.#.#.#.#.#\n\
---         \#.###.###.###.#######.#.#.#.#.#####.#.###.#.#######.#.#####.#####.#.#.###.#.#.#.#\n\
---         \#.#.#...#.....#...#...#.#.#.#.....#.#...#.#.#.......#...#...#...#.#.#.....#.#.#.#\n\
---         \#.#A###.#.#######.#.###Q###.#####.#####.#.#.#.#######.###.###.#.###.#######.#.#.#\n\
---         \#.#...#.#.........#...#...#...#...#.....#.#.........#.....#.#.#...#.#.......#w#.#\n\
---         \#.#.#.#.#########.###.###.###.#.###.###.#####.###########.#.#.###.#.#####.#.#.#.#\n\
---         \#...#.#...#.......#..s#.....#.#...#.#.#.#...#.#.........#...#.#...#.#...#.#...#.#\n\
---         \###.#####.#########.#######.#.###.#.#.#.#.#.#.#.#######.###.#.#.###.#.#.###.###.#\n\
---         \#...#...#.......#...#...#...#...#...#...#.#.#.#.#...#...#...#.#...#...#...#.....#\n\
---         \#.###.#.#######.#.#.###.#.#####.#####.###.#.###.#.#.#.#.#########.#.#####.#####.#\n\
---         \#n..#.#.......#.#.#...#.#.....#.....#...#.#.....#.#.#.#.#.....#...#.....#.....#a#\n\
---         \###.#.#######.#.#.#####.#####.#.###.###.#.#######.#.#.#.#.#.###.#######.#####.#.#\n\
---         \#...#.#.....#...#.....#.#...#.#...#...#.#.#.....#.#...#.#.#.#...#.....#.....#.#.#\n\
---         \#.###.#.###.#########.#K#.###B###.#####.#.#.###.#.#######.#.#.#####.#.#####.#.#.#\n\
---         \#.#.#.....#.#.......#...#...#...#...#...#.#...#.#.....#...#...#...#.#...#...#.#.#\n\
---         \#.#.#######.#.#####.#######.###.###.#.###.###.#.#####.#.#######.#.#.#.###.###.#.#\n\
---         \#...#...#...#...#i#...#.......#...#.....#.#...#.#...#...#.....#.#.#.#.#...#.#.#.#\n\
---         \###.#.###.#####.#.#.###.#.#######.#####.#.#.#####.#.#####.###.#.#.#.#.#.###.#.#.#\n\
---         \#...#.#...#.....#.#...#.#.......#...#...#.#.......#.....#...#...#.#.#.......#.#.#\n\
---         \#.###.#.#.#.#####.###.#.#######.###.#.###.#######.###.#.###.#####.###.#######.###\n\
---         \#.#...#.#.#.#.....#...#...#.#...#...#...#...#...#...#.#.....#...#...#.#.....#...#\n\
---         \#.###.#.###.#.###.#.#.###.#.#.###.#####.###.#.#.###.#.#######.#.###.###.###.###.#\n\
---         \#...#.#.#...#..z#.#.#...#.#.#...#.#.....#...#.#.#...#.....#.#.#...#.....#.#...#.#\n\
---         \###.#.#.#.###.#.#.#.#####.#.###.#.#.#####.###.#.#########.#.#.###.#######.###.#.#\n\
---         \#.#...#.#...#.#.#.#.......#...#...#...#.#.....#.........#.#.#.#...#.......#...#.#\n\
---         \#.###.#.###.#.#.###########.#.#######.#.###############.#.#.#.#.###.#.#####.###.#\n\
---         \#.....#.....#.#.......H.....#........................h....#...#.....#...........#\n\
---         \#######################################.@.#######################################\n\
---         \#....m....#.#.........#.....#.............#...#...............#.........#.......#\n\
---         \#.#.#####.#.#.#######.#.#####.###.#####.#.#.#.#.#.#.###########.#####.#.#.#.#####\n\
---         \#.#.#.....#.#...#...#.#.#.....#.#.#...#.#.#.#...#.#.#.....#.....#.I...#...#.#...#\n\
---         \#.#.###.###.###.#.#.#.#.#.#####.#.#.#.#.#.#.#####.###.###.#.#####.#####.#####.#.#\n\
---         \#.#...#.......#.#.#...#.#.......#.#.#.#.#...#...#.......#...#.....#...#.#.....#.#\n\
---         \#.###.#######.#.#.#####.#######.#.#.#.#.#####.#.#######.#####.#####.###.#.#####.#\n\
---         \#...#.....#...#.#.#.......#.....#...#.#.#.....#.....#.#.#...#.....#.....#.#....b#\n\
---         \#.#######.#.###.#.#######.#.#########.###.#########.#.#.###.#####.#.#####.#.#####\n\
---         \#.#.......#u..#.#.......#.#...#.#...#...#.#...#.#...#.......Z.#...#...#q..#.#...#\n\
---         \###.###########.#######.#.###.#.#.#.#.#.#.#.#.#.#.###.#########.#######.###.#.#.#\n\
---         \#...#.L.......#...#...#.#...#...#.#.#.#.#...#.#.#.#...#.........#.......#...#.#.#\n\
---         \#.###.#######.###.###.#.#.#.#.###.#.###.#####.#.#.#.###.#####.###.#######U#####.#\n\
---         \#y....#.....#...#.....#.#.#...#...#.....#.....#.#.#...#...#.#.#...#.....#.......#\n\
---         \#.#####.#######.#####.#.#######.#######.#.#####.#.#######.#.#.#.#####.#########.#\n\
---         \#.#..f..#.......#.....#...#.....#.....#.#...#.......#.....#...#.#...#.#.......#.#\n\
---         \#.#.#####.#####.#.#######.#.#####.###.#.#.#.#######.#.#######.#.#.#.#M#.###.###.#\n\
---         \#.#.#...#.....#.#...#.....#...#.....#.#.#.#.....#.#.#.#.....#.#.#.#...#...#.....#\n\
---         \#.#.#.#.#.###.#.###.#.#####.#.#####.###.#######.#.#.#.#.###.###.#.#.#####.#######\n\
---         \#...#.#.#...#.#...#.#.#...#.#.....#.#...#.......#.#...#.#.#.....#.#.#.F...#.....#\n\
---         \#####.#.###.#.#####.#.#.###.#####.#.#.###.#######.#.###.#.#.#####.###.#######.#Y#\n\
---         \#.....#...#.#.....#.#.#...#.....#.#.#...#.....#...#.#...#.#.#.#.......#.......#.#\n\
---         \#.#######.#######.#.###.#.###.###.#.###.#.###.#.###.#.###.#.#.#######.###.#####.#\n\
---         \#.#...............#...#.#.#...#...#.....#...#.#.#...#.#...O.#.......#.....#.....#\n\
---         \#.#############.#####.#.#.#.###.###.#######.#.#.#.###D#############.#######.#####\n\
---         \#.........#...#.#...#.#.#...#.#.#.#.#...#...#.#.#...#.....#.......#...#...#.....#\n\
---         \#########.#.#.###.#.#.#.#####.#.#.#.#.#######.#C###.#####.#.#.#######.###.#####.#\n\
---         \#.....#...#.#...#r#.#.#.......#.#.#.#...#.....#...#.#...#...#.S.#..k..#.....#...#\n\
---         \#.###.#.#.#.###.#.#.#.#########.#.#.#.#.#.#####.#.#.###.#######.#.#####.#####.###\n\
---         \#.#.#.#.#.#.#.#...#.#.#...#...#.#...#.#.#.#.....#.#.....#.....#...#...........#.#\n\
---         \#.#.#.#.#.#.#.#####.#.#.#.#.#.#.#.#####.#.#.#.#####.#####.###.#####.###########.#\n\
---         \#.#.....#.#...#.#...#.#.#.#.#v..#.......#.#.#.#.....#...#...#.#...#...#.......#.#\n\
---         \#.###########.#.#.#.#.#.#.#.###########.#.###.#.#####.#.###.#.#.#.###.#.#.###.#P#\n\
---         \#...............#.#.#..e#...#...#.T.....#...#.#.#.....#...#.#...#.....#.#.#l#...#\n\
---         \#.###############.#.#########.###.#######.#.#.#.#.#######.#.###########.#.#.###.#\n\
---         \#.#.........#.....#.#...#.......#.#.....#.#.#...#.#.....#...#.J...#...#.#.#.....#\n\
---         \#.#######.#.#.#######.#.#.#####.#.#.###.#.#.#####.#.###.#####.###.###.#.#.###.###\n\
---         \#.........#.#.....#...#.#.....#...#.#.#.#.#.#.....#.#.........#.#...#...#.X.#...#\n\
---         \###########.#####.#.###.#####.#####.#.#.#.#.#.#######.#########.###.#######.###.#\n\
---         \#...............#.....#.............#..g#.#.......N...#.....................#...#\n\
---         \#################################################################################"
-----------------------------------------------------
-type Coordinate = (Int, Int)
+t3 =
+  "#########\n\
+  \#b.A.@.a#\n\
+  \#########"
 
-parse :: String -> Map Coordinate Char
-parse str = Map.fromList grid
+t2 =
+  "########################\n\
+  \#@..............ac.GI.b#\n\
+  \###d#e#f################\n\
+  \###A#B#C################\n\
+  \###g#h#i################\n\
+  \########################"
+
+t1 =
+  "#################\n\
+  \#i.G..c...e..H.p#\n\
+  \########.########\n\
+  \#j.A..b...f..D.o#\n\
+  \########@########\n\
+  \#k.E..a...g..B.n#\n\
+  \########.########\n\
+  \#l.F..d...h..C.m#\n\
+  \#################"
+----------------
+
+north = (0, -1)
+south = (0,  1)
+east  = (-1, 0)
+west  = (1,  0)
+
+type Position = (Int, Int)
+type Maze = Map Position Char
+
+mazeFromString :: String -> Maze
+mazeFromString string = Map.fromList . concat $ List.map (\(y, l) -> List.map (\(x, v) -> ((x, y), v)) l) (zip [0 ..] (List.map (zip [0 ..]) (lines string)))
+
+doorPositions :: Maze -> Map Char Position
+doorPositions maze = Map.fromList . List.map swap . Map.toList . Map.filter isAsciiUpper $ maze
+
+keyPositions :: Maze -> Map Char Position
+keyPositions maze = Map.fromList . List.map swap . Map.toList . Map.filter isAsciiLower $ maze
+
+positionOf :: Maze -> Char -> Position
+positionOf maze x = head . Map.keys . Map.filter (x ==) $ maze
+
+distanceToKeys :: Maze -> Char -> Map Char (Int, Set Char)
+distanceToKeys maze x = bfs maze 0 (positionOf maze x) Set.empty Set.empty Map.empty
   where
-    grid =
-      concat $
-      List.map
-        (\(y, l) -> List.map (\(x, v) -> ((x, y), v)) l)
-        (zip [0 ..] (List.map (zip [0 ..]) (lines str)))
+    bfs maze distance position@(x, y) visited doors result
+      | distance == 0 && maze ! position /= '.' = bfs (Map.insert position '.' maze) distance position (Set.insert position visited) doors result
+      | isAsciiLower (maze ! position) = bfs (Map.insert position '.' maze) distance position (Set.insert position visited) doors (Map.insert (maze ! position) (distance, doors) result)
+      | isAsciiUpper (maze ! position) = bfs (Map.insert position '.' maze) distance position (Set.insert position visited) (Set.insert (maze ! position) doors) result
+      | otherwise = List.foldl Map.union result $ List.map (\(x', y') -> bfs maze (distance + 1) (x', y') (Set.insert position visited) doors result) toVisit
+      where
+        cell (a, b) = Map.findWithDefault '#' (a, b) maze
+        north = (x, y + 1)
+        south = (x, y - 1)
+        east = (x + 1, y)
+        west = (x - 1, y)
+        toVisit =
+          List.filter
+            (\dir -> not (dir `Set.member` visited) && cell dir /= '#')
+            [north, south, east, west]
 
----------------------------------------------------
-f :: Int
-  -> Coordinate
-  -> Map Coordinate Char
-  -> Set Char
-  -> Set Coordinate
-  -> Int
-  -> Int
-  -> Int
-f distance (x, y) world keysCollected visited toCollect currentResult
-  | toCollect == 0 = min distance currentResult
-  | current >= 'a' && current <= 'z' && distance == 0 =
-    f
-      distance
-      (x, y)
-      (Map.insert (x, y) '.' world)
-      (Set.insert current keysCollected)
-      Set.empty
-      (toCollect - 1)
-      currentResult
-  | current >= 'A' &&
-      current <= 'Z' && (toLower current `Set.member` keysCollected) =
-    f
-      distance
-      (x, y)
-      (Map.insert (x, y) '.' world)
-      keysCollected
-      (Set.insert (x, y) visited)
-      toCollect
-      currentResult
-  | current >= 'A' &&
-      current <= 'Z' && (not (toLower current `Set.member` keysCollected)) =
-    maxBound :: Int
-  | otherwise =
-    minimum $
-    currentResult :
-    (List.map
-       (\(x', y') ->
-          f
-            (distance + 1)
-            (x', y')
-            world
-            keysCollected
-            (Set.insert (x, y) visited)
-            toCollect
-            currentResult)
-       toVisit)
-  where
-    current = world ! (x, y)
-    cell (a, b) = Map.findWithDefault '#' (a, b) world
-    north = (x, y + 1)
-    south = (x, y - 1)
-    east = (x + 1, y)
-    west = (x - 1, y)
-    toVisit =
-      List.filter
-        (\dir -> not (dir `Set.member` visited) && cell dir /= '#')
-        [north, south, east, west]
-
-keysFrom ::
-     Int
-  -> Coordinate
-  -> Map Coordinate Char
-  -> Set Coordinate
-  -> Set Char
-  -> Map Char (Int, Set Char)
-  -> Map Char (Int, Set Char)
-keysFrom distance (x, y) world visited doors result
-  | distance == 0 && current /= '.' =
-    keysFrom distance (x, y) (Map.insert (x, y) '.' world) visited doors result
-  | current >= 'a' && current <= 'z' =
-    keysFrom
-      distance
-      (x, y)
-      (Map.insert (x, y) '.' world)
-      (Set.insert (x, y) visited)
-      doors
-      (Map.insert current (distance, doors) result)
-  | current >= 'A' && current <= 'Z' =
-    keysFrom
-      distance
-      (x, y)
-      (Map.insert (x, y) '.' world)
-      (Set.insert (x, y) visited)
-      (Set.insert current doors)
-      result
-  | otherwise =
-    Map.union
-      result
-      (List.foldl Map.union Map.empty $
-       List.map
-         (\(x', y') ->
-            keysFrom
-              (distance + 1)
-              (x', y')
-              world
-              (Set.insert (x, y) visited)
-              doors
-              result)
-         toVisit)
-  where
-    current = world ! (x, y)
-    cell (a, b) = Map.findWithDefault '#' (a, b) world
-    north = (x, y + 1)
-    south = (x, y - 1)
-    east = (x + 1, y)
-    west = (x - 1, y)
-    toVisit =
-      List.filter
-        (\dir -> not (dir `Set.member` visited) && cell dir /= '#')
-        [north, south, east, west]
-
-input = t1
-startPosition = fst . head . Map.toList $ (Map.filter (== '@') (parse input))
-
-toCollect = Map.size $ Map.filter (\x -> x >= 'a' && x <= 'z') (parse input)
-
-part1 =
-  f 0
-    startPosition
-    (parse input)
-    Set.empty
-    Set.empty
-    toCollect
-    (maxBound :: Int)
-
-allKeysSet =
-  Set.fromList $
-  Map.elems $ Map.filter (\x -> x >= 'a' && x <= 'z') (parse input)
-
-_keys = Map.toList $ Map.filter (\x -> (x >= 'a' && x <= 'z')) (parse input)
-
-fromStart = keysFrom 0 startPosition (parse input) Set.empty Set.empty Map.empty
-
-foo =
-  Map.insert
-    '@'
-    fromStart
-    (Map.fromList
-       (List.map
-          (\(p, k) ->
-             (k, keysFrom 0 p (parse input) Set.empty Set.empty Map.empty))
-          _keys))
-
--- Map.filter ((0==) . Set.size . (`Set.difference` (Set.map toUpper allKeysSet)) . snd) (foo ! '@')
-g :: Char
-  -> Set Char
-  -> Int
-  -> Int
-g node keysCollected distance
-  | Set.size keysCollected > Set.size allKeysSet = distance
-  | otherwise = (g (fst next) (Set.insert (fst next) keysCollected) ((snd next) + distance))
-  where
-    next = 
-      -- trace (show distance ++ "," ++ show keysCollected ++ ", to visit" ++ show (Set.difference allKeysSet keysCollected)) $
-      List.minimumBy (comparing snd) $ Map.toList $
-      Map.filterWithKey (\k v -> not . (`Set.member` keysCollected) $ k) $
-        Map.map fst $
-        Map.filter
-          ((0 ==) .
-          Set.size . (`Set.difference` (Set.map toUpper keysCollected)) . snd)
-          (foo ! node)
-
--- qwer node keysCollected = 
---   trace ("g from " ++ show node ++ ", " ++ ", visited " ++ show keysCollected ++ ", to visit" ++ show (Set.difference allKeysSet keysCollected)) $
---   Map.filterWithKey (\k v -> not . (`Set.member` keysCollected) $ k) $
---     Map.map fst $
---     Map.filter
---       ((0 ==) .
---       Set.size . (`Set.difference` (Set.map toUpper keysCollected)) . snd)
---       (foo ! node)
--- -- gMemo = memoize g
+keyToKeys :: Maze -> Map Char (Map Char (Int, Set Char))
+keyToKeys maze = Map.fromList . List.map (\k -> (k, distanceToKeys maze k)) . ('@':) . Map.elems . Map.filter isAsciiLower $ maze
 
 main :: IO ()
 main = do
-  print $ part1
-
-
-
-
-
-
---   g :: Char
---   -> Set Char
---   -> Map Char (Map Char (Int, Set Char))
---   -> Set Char
---   -> Map Char Int
--- g node keysCollected mapping visited =
---   Map.filterWithKey (\k v -> not . (`Set.member` visited) $ k) $
---   Map.map fst $
---   Map.filter
---     ((0 ==) .
---      Set.size . (`Set.difference` (Set.map toUpper keysCollected)) . snd)
---     (mapping ! node)
+  print ""
