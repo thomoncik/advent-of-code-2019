@@ -7,6 +7,7 @@ import Data.Map as Map
 import Data.Ord as Ord
 import Data.Set as Set
 import Data.Tuple as Tuple
+import Data.Sequence as Sequence
 
 import Debug.Trace as Trace
 
@@ -129,13 +130,7 @@ type Position = (Int, Int)
 type Maze = Map Position Char
 
 mazeFromString :: String -> Maze
-mazeFromString string = Map.fromList . concat $ List.map (\(y, l) -> List.map (\(x, v) -> ((x, y), v)) l) (zip [0 ..] (List.map (zip [0 ..]) (lines string)))
-
-doorPositions :: Maze -> Map Char Position
-doorPositions maze = Map.fromList . List.map swap . Map.toList . Map.filter isAsciiUpper $ maze
-
-keyPositions :: Maze -> Map Char Position
-keyPositions maze = Map.fromList . List.map swap . Map.toList . Map.filter isAsciiLower $ maze
+mazeFromString string = Map.fromList . concat $ List.map (\(y, l) -> List.map (\(x, v) -> ((x, y), v)) l) (Prelude.zip [0 ..] (List.map (Prelude.zip [0 ..]) (lines string)))
 
 positionOf :: Maze -> Char -> Position
 positionOf maze x = head . Map.keys . Map.filter (x ==) $ maze
@@ -144,13 +139,13 @@ allKeys :: Maze -> Set Char
 allKeys maze = Set.fromList . Map.elems . Map.filter isAsciiLower $ maze
 
 part1 :: String -> Int
-part1 str = bfs Set.empty [(0, (positionOf maze '@'), Set.empty, Set.empty)]
+part1 str = bfs Set.empty ((0, (positionOf maze '@'), Set.empty, Set.empty) :<| Empty)
   where
     maze = mazeFromString str
-    bfs repeated ((distance, (x, y), visited, keysCollected) : nodes)
-      | keysCollected == allKeys maze = error $ "All keys collected, dist: " ++ show distance
-      | isAsciiLower current && not (current `Set.member` keysCollected) = bfs repeated ((distance, (x, y), Set.empty, (Set.insert current keysCollected)) : nodes)
-      | otherwise = bfs (List.foldr Set.insert repeated (List.map (\(_, (x', y'), _, keysCollected') -> ((x', y'), keysCollected')) $ toVisit)) (nodes ++ toVisit)
+    bfs repeated ((distance, (x, y), visited, keysCollected) :<| nodes)
+      | keysCollected == allKeys maze = distance
+      | isAsciiLower current && not (current `Set.member` keysCollected) = bfs repeated ((distance, (x, y), Set.empty, (Set.insert current keysCollected)) :<| nodes)
+      | otherwise = bfs (List.foldr Set.insert repeated (List.map (\(_, (x', y'), _, keysCollected') -> ((x', y'), keysCollected')) $ toVisit)) (nodes >< Sequence.fromList toVisit)
       where
         cell (a, b) = if distance `mod` 100 == 0 then trace (show (distance, (x, y), keysCollected)) $ 
                                                   Map.findWithDefault '#' (a, b) maze
@@ -162,6 +157,72 @@ part1 str = bfs Set.empty [(0, (positionOf maze '@'), Set.empty, Set.empty)]
                     List.filter 
                     (\dir -> not ((dir, keysCollected) `Set.member` repeated) && not (dir `Set.member` visited) && cell dir /= '#' && canGoIfDoor (cell dir)) $
                     [(x, y + 1), (x, y - 1), (x + 1, y), (x - 1, y)]
+
+--------------------------------
+
+dividedMazeFromString :: String -> (Maze, (Int, Int))
+dividedMazeFromString string = (maze, (a,b))
+  where
+    maze' = Map.insert (a + 1, b - 1) '@' .
+            Map.insert (a + 1, b + 1) '@' .
+            Map.insert (a - 1, b - 1) '@' .
+            Map.insert (a - 1, b + 1) '@' .
+            Map.insert (a, b - 1) '#' .
+            Map.insert (a, b + 1) '#' .
+            Map.insert (a + 1, b) '#' .
+            Map.insert (a - 1, b) '#' . 
+            Map.insert (a, b) '#' 
+            $ maze
+    (a,b) = positionOf maze '@'
+    maze = mazeFromString string
+
+----------------------------
+
+t21 =
+  "#######\n\
+  \#a.#Cd#\n\
+  \##...##\n\
+  \##.@.##\n\
+  \##...##\n\
+  \#cB#Ab#\n\
+  \#######"
+
+t22 =
+  "#############\n\
+  \#DcBa.#.GhKl#\n\
+  \#.###...#I###\n\
+  \#e#d#.@.#j#k#\n\
+  \###C#...###J#\n\
+  \#fEbA.#.FgHi#\n\
+  \#############"
+
+part2 :: String -> Int
+part2 str = bfs (mazeULQuadrant) Set.empty ((0, (apos - 1, bpos - 1), Set.empty, Set.empty) :<| Empty) +
+            bfs (mazeURQuadrant) Set.empty ((0, (apos + 1, bpos - 1), Set.empty, Set.empty) :<| Empty) +
+            bfs (mazeLLQuadrant) Set.empty ((0, (apos - 1, bpos + 1), Set.empty, Set.empty) :<| Empty) +
+            bfs (mazeLRQuadrant) Set.empty ((0, (apos + 1, bpos + 1), Set.empty, Set.empty) :<| Empty)
+  where
+    (maze, (apos, bpos)) = dividedMazeFromString str
+    mazeULQuadrant = Map.filterWithKey (\(a, b) c -> a < apos && b < bpos) maze
+    mazeURQuadrant = Map.filterWithKey (\(a, b) c -> a > apos && b < bpos) maze
+    mazeLLQuadrant = Map.filterWithKey (\(a, b) c -> a < apos && b > bpos) maze
+    mazeLRQuadrant = Map.filterWithKey (\(a, b) c -> a > apos && b > bpos) maze
+    bfs m repeated ((distance, (x, y), visited, keysCollected) :<| nodes)
+      | allKeys m `Set.isSubsetOf` keysCollected = distance
+      | isAsciiLower current && not (current `Set.member` keysCollected) = bfs m repeated ((distance, (x, y), Set.empty, (Set.insert current keysCollected)) :<| nodes)
+      | otherwise = bfs m (List.foldr Set.insert repeated (List.map (\(_, (x', y'), _, keysCollected') -> ((x', y'), keysCollected')) $ toVisit)) (nodes >< Sequence.fromList toVisit)
+      where
+        cell (a, b) = if distance `mod` 100 == 0 then trace (show (distance, (x, y), keysCollected)) $ 
+                                                  Map.findWithDefault '#' (a, b) m
+                                              else Map.findWithDefault '#' (a, b) m
+        canGoIfDoor a = if (toUpper a) `Set.member` (allKeys m) then toLower a `Set.member` keysCollected else True
+        current = cell (x, y)
+        visited' = Set.insert (x, y) visited
+        toVisit = List.map (\(x', y') -> (distance + 1, (x', y'), visited', keysCollected)) .
+                    List.filter 
+                    (\dir -> not ((dir, keysCollected) `Set.member` repeated) && not (dir `Set.member` visited) && cell dir /= '#' && canGoIfDoor (cell dir)) $
+                    [(x, y + 1), (x, y - 1), (x + 1, y), (x - 1, y)]
+
 
 main :: IO ()
 main = do
