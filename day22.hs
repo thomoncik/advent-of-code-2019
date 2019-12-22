@@ -1,37 +1,159 @@
-module Main (main) where
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE TypeApplications #-}
 
-len = 119315717514047
--- len = 10
--- len = 10007
+module Main where
 
-dealPos :: Int -> Int
-dealPos pos = (len - pos - 1) `mod` len
+import Data.Finite
+import Data.Semigroup
+import Data.Group (Group(..))
+import GHC.TypeLits
 
-cutPos :: Int -> Int -> Int
-cutPos n pos = (pos - n) `mod` len
+data Technique
+  = Deal
+  | Cut Integer
+  | DealInc Integer
+  deriving (Show)
 
-dealWithIncrementPos :: Int -> Int -> Int
-dealWithIncrementPos n pos = pos * n `mod` len
+technique :: String -> Technique
+technique string = parse (words string)
+  where
+    parse (["deal", "into", "new", "stack"]) = Deal
+    parse (["cut", n]) = Cut (read n)
+    parse (["deal", "with", "increment", n]) = DealInc (read n)
 
-shuffleInputPos pos = dealWithIncrementPos 3 . cutPos 5193 . dealWithIncrementPos 34 . cutPos 3443 . dealWithIncrementPos 22 . dealPos . cutPos 8075 . dealPos . dealWithIncrementPos 54 . cutPos (-5777) . dealWithIncrementPos 61 . cutPos 5339 . dealWithIncrementPos 25 . cutPos (-2460) . dealWithIncrementPos 63 . cutPos (-785) . dealWithIncrementPos 18 . cutPos 3638 . dealWithIncrementPos 47 . dealPos . cutPos 6002 . dealWithIncrementPos 51 . cutPos 8271 . dealPos . cutPos (-8044) . dealWithIncrementPos 67 . dealPos . dealWithIncrementPos 55 . cutPos (-1830) . dealPos . dealWithIncrementPos 75 . cutPos (-9250) . dealWithIncrementPos 65 . cutPos 9483 . dealWithIncrementPos 55 . cutPos 5979 . dealWithIncrementPos 13 . dealPos . dealWithIncrementPos 59 . cutPos 9008 . dealWithIncrementPos 38 . cutPos (-9203) . dealWithIncrementPos 7 . dealPos . dealWithIncrementPos 71 . dealPos . dealWithIncrementPos 63 . cutPos (-3436) . dealPos . dealWithIncrementPos 5 . cutPos 6877 . dealWithIncrementPos 27 . dealPos . dealWithIncrementPos 65 . dealPos . dealWithIncrementPos 30 . cutPos 960 . dealWithIncrementPos 12 . cutPos 1015 . dealWithIncrementPos 44 . cutPos (-7726) . dealPos . cutPos (-1845) . dealWithIncrementPos 64 . cutPos (-648) . dealWithIncrementPos 59 . cutPos (-5080) . dealWithIncrementPos 36 . cutPos (-2225) . dealWithIncrementPos 9 . cutPos 4405 . dealWithIncrementPos 40 . cutPos (-8246) . dealPos . dealWithIncrementPos 32 . cutPos 6558 . dealWithIncrementPos 16 . cutPos 3168 . dealWithIncrementPos 8 . dealPos . dealWithIncrementPos 51 . cutPos (-9423) . dealWithIncrementPos 28 . cutPos 957 . dealWithIncrementPos 59 . cutPos 9112 . dealPos . dealWithIncrementPos 3 . cutPos 2157 . dealWithIncrementPos 53 . dealPos . dealWithIncrementPos 15 . cutPos 8319 . dealPos . dealWithIncrementPos 27 . cutPos (-3856) . dealWithIncrementPos 32 . dealPos . dealWithIncrementPos 36 . cutPos (-8737) $ pos
+data Linear a =
+  Linear a a
+  deriving (Show)
 
-------------
+instance Num a => Semigroup (Linear a) where
+  (Linear a b) <> (Linear c d) = Linear (c * a) (c * b Prelude.+ d)
 
-modExp :: Int -> Int -> Int -> Int
-modExp  x y n = mod (x^(mod y (n-1))) (n)
+instance Num a => Monoid (Linear a) where
+  mempty = Linear 1 0
 
-modInverse :: Int -> Int -> Int
-modInverse a m = modExp a (m - 2) m
+eval :: Num a => Linear a -> a -> a
+eval (Linear a b) x = a * x Prelude.+ b
 
-dealPosRev :: Int -> Int
-dealPosRev x = len - 1 - x
-    
-cutPosRev :: Int -> Int -> Int
-cutPosRev n x = (x + n + len) `mod` len
+(@#) :: Num a => Linear a -> a -> a
+(@#) (Linear a b) y = (y - b) * (a ^ (maxBound @(Finite 119315717514047) - 1))
 
-dealWithIncrementPosRev :: Int -> Int -> Int
-dealWithIncrementPosRev x n = (modInverse n len) * x `mod` len
+techniqueToLinear :: KnownNat n => Technique -> Linear (Finite n)
+techniqueToLinear Deal = Linear (negate 1) (negate 1)
+techniqueToLinear (Cut k) = Linear 1 (negate . modulo $ k)
+techniqueToLinear (DealInc k) = Linear (modulo k) 0
 
 main :: IO ()
 main = do
-  print $ shuffleInputPos 2019 -- with len set to 10007, part1
+  let
+    techniques = map technique input
+    shuffle :: KnownNat n => Linear (Finite n)
+    shuffle = foldMap techniqueToLinear techniques
+  print $ eval (shuffle @10007) 2019
+  print $ 101741582076661 `stimes` shuffle @119315717514047 @# 2020
+
+-------------------------------------------------------------------------------
+-- Input
+-------------------------------------------------------------------------------
+
+input :: [String]
+input = [
+  "cut -8737",
+  "deal with increment 36",
+  "deal into new stack",
+  "deal with increment 32",
+  "cut -3856",
+  "deal with increment 27",
+  "deal into new stack",
+  "cut 8319",
+  "deal with increment 15",
+  "deal into new stack",
+  "deal with increment 53",
+  "cut 2157",
+  "deal with increment 3",
+  "deal into new stack",
+  "cut 9112",
+  "deal with increment 59",
+  "cut 957",
+  "deal with increment 28",
+  "cut -9423",
+  "deal with increment 51",
+  "deal into new stack",
+  "deal with increment 8",
+  "cut 3168",
+  "deal with increment 16",
+  "cut 6558",
+  "deal with increment 32",
+  "deal into new stack",
+  "cut -8246",
+  "deal with increment 40",
+  "cut 4405",
+  "deal with increment 9",
+  "cut -2225",
+  "deal with increment 36",
+  "cut -5080",
+  "deal with increment 59",
+  "cut -648",
+  "deal with increment 64",
+  "cut -1845",
+  "deal into new stack",
+  "cut -7726",
+  "deal with increment 44",
+  "cut 1015",
+  "deal with increment 12",
+  "cut 960",
+  "deal with increment 30",
+  "deal into new stack",
+  "deal with increment 65",
+  "deal into new stack",
+  "deal with increment 27",
+  "cut 6877",
+  "deal with increment 5",
+  "deal into new stack",
+  "cut -3436",
+  "deal with increment 63",
+  "deal into new stack",
+  "deal with increment 71",
+  "deal into new stack",
+  "deal with increment 7",
+  "cut -9203",
+  "deal with increment 38",
+  "cut 9008",
+  "deal with increment 59",
+  "deal into new stack",
+  "deal with increment 13",
+  "cut 5979",
+  "deal with increment 55",
+  "cut 9483",
+  "deal with increment 65",
+  "cut -9250",
+  "deal with increment 75",
+  "deal into new stack",
+  "cut -1830",
+  "deal with increment 55",
+  "deal into new stack",
+  "deal with increment 67",
+  "cut -8044",
+  "deal into new stack",
+  "cut 8271",
+  "deal with increment 51",
+  "cut 6002",
+  "deal into new stack",
+  "deal with increment 47",
+  "cut 3638",
+  "deal with increment 18",
+  "cut -785",
+  "deal with increment 63",
+  "cut -2460",
+  "deal with increment 25",
+  "cut 5339",
+  "deal with increment 61",
+  "cut -5777",
+  "deal with increment 54",
+  "deal into new stack",
+  "cut 8075",
+  "deal into new stack",
+  "deal with increment 22",
+  "cut 3443",
+  "deal with increment 34",
+  "cut 5193",
+  "deal with increment 3"]
