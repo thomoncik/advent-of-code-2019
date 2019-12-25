@@ -8,7 +8,7 @@ import Data.Ord as Ord
 import Data.Set as Set
 import Data.Tuple as Tuple
 import Data.Sequence as Sequence
-
+import Data.Maybe
 import Debug.Trace as Trace
 
 t1 =
@@ -223,6 +223,9 @@ labelToPosition maze (a:b:[]) =
 teleports :: Maze -> [[Position]]
 teleports maze = List.filter ((2==) . List.length) . List.map (labelToPosition maze) $ [[a,b] | a <- ['A'..'Z'], b <- ['A'..'Z']]
 
+teleports2 :: Maze -> Map Position Position
+teleports2 maze = Map.fromList . concat . List.map (\[a,b] -> [(a,b), (b,a)]) . List.filter ((2==) . List.length) . List.map (labelToPosition maze) $ [[a,b] | a <- ['A'..'Z'], b <- ['A'..'Z']]
+
 teleport :: Maze -> Position -> Position
 teleport maze (x, y) = 
   let teleports = List.filter ((2==) . List.length) . List.map (labelToPosition maze) $ [[a,b] | a <- ['A'..'Z'], b <- ['A'..'Z']]
@@ -253,6 +256,103 @@ part1 str =
 
 --------------------------------
 
+data NodeType = Start | End deriving (Eq, Ord, Show, Read, Bounded, Enum)
+
+t3 =
+  "             Z L X W       C                 \n\
+  \             Z P Q B       K                 \n\
+  \  ###########.#.#.#.#######.###############  \n\
+  \  #...#.......#.#.......#.#.......#.#.#...#  \n\
+  \  ###.#.#.#.#.#.#.#.###.#.#.#######.#.#.###  \n\
+  \  #.#...#.#.#...#.#.#...#...#...#.#.......#  \n\
+  \  #.###.#######.###.###.#.###.###.#.#######  \n\
+  \  #...#.......#.#...#...#.............#...#  \n\
+  \  #.#########.#######.#.#######.#######.###  \n\
+  \  #...#.#    F       R I       Z    #.#.#.#  \n\
+  \  #.###.#    D       E C       H    #.#.#.#  \n\
+  \  #.#...#                           #...#.#  \n\
+  \  #.###.#                           #.###.#  \n\
+  \  #.#....OA                       WB..#.#..ZH\n\
+  \  #.###.#                           #.#.#.#  \n\
+  \CJ......#                           #.....#  \n\
+  \  #######                           #######  \n\
+  \  #.#....CK                         #......IC\n\
+  \  #.###.#                           #.###.#  \n\
+  \  #.....#                           #...#.#  \n\
+  \  ###.###                           #.#.#.#  \n\
+  \XF....#.#                         RF..#.#.#  \n\
+  \  #####.#                           #######  \n\
+  \  #......CJ                       NM..#...#  \n\
+  \  ###.#.#                           #.###.#  \n\
+  \RE....#.#                           #......RF\n\
+  \  ###.###        X   X       L      #.#.#.#  \n\
+  \  #.....#        F   Q       P      #.#.#.#  \n\
+  \  ###.###########.###.#######.#########.###  \n\
+  \  #.....#...#.....#.......#...#.....#.#...#  \n\
+  \  #####.#.###.#######.#######.###.###.#.#.#  \n\
+  \  #.......#.......#.#.#.#.#...#...#...#.#.#  \n\
+  \  #####.###.#####.#.#.#.#.###.###.#.###.###  \n\
+  \  #.......#.....#.#...#...............#...#  \n\
+  \  #############.#.#.###.###################  \n\
+  \               A O F   N                     \n\
+  \               A A D   M                     "
+
+-- part2 :: String -> Int
+-- part2 str = 
+--   let
+--     startPosition = (head . labelToPosition maze $ "AA")
+--     endPosition = (head . labelToPosition maze $ "ZZ")
+--     maze = mazeFromString str
+--     telep = teleports2 maze
+--     maxX = maximum . List.map fst $ Map.keys maze
+--     maxY = maximum . List.map snd $ Map.keys maze
+--   in
+--     bfs Set.empty ((0, startPosition, 0, False) :<| Empty)
+--   where
+--     bfs visited ((distance, (x, y), lvl, justTeleported) :<| nodes)
+--       | lvl == 100 = bfs visited nodes
+--       | (x, y) == endPosition && lvl == 0 = distance
+--       | lvl > 0 && isOuter (x, y) && justTeleported == False && (isJust $ telep Map.!? (x, y)) = bfs visited' ((distance + 1, teleport maze (x, y), lvl - 1, True) :<| nodes)
+--       | not (isOuter (x,y)) && justTeleported == False && (isJust $ telep Map.!? (x, y)) = bfs visited' ((distance + 1, teleport maze (x, y), lvl + 1, True) :<| nodes)
+--       | otherwise = bfs visited' (nodes >< Sequence.fromList toVisit)
+--       where
+--         isOuter (a, b) = a == maxX - 2 || b == maxY - 2 || a == 2 || b == 2
+--         cell (a, b) = trace (show lvl ++ " | " ++ show (distance, (x, y)) ++ " " ++ show (a, b)) $ Map.findWithDefault '#' (a, b) maze
+--         current = cell (x, y)
+--         visited' = Set.insert (lvl, (x, y)) visited
+--         toVisit = List.map (\(x', y') -> (distance + 1, (x', y'), lvl, False)) .
+--                     List.filter 
+--                     (\dir -> not ((lvl, dir) `Set.member` visited) && cell dir == '.') $
+--                     [(x, y + 1), (x, y - 1), (x + 1, y), (x - 1, y)]
+
+
+---
+
+maze = mazeFromString input
+startPosition = (head . labelToPosition maze $ "AA")
+endPosition = (head . labelToPosition maze $ "ZZ")
+telep = teleports2 maze
+maxX = maximum . List.map fst $ Map.keys maze
+maxY = maximum . List.map snd $ Map.keys maze
+
 main :: IO ()
 main = do
-  print ""
+  print $ maze
+  print $ telep
+  print $ bfs Set.empty ((0, startPosition, 0, False) :<| Empty)
+  where
+    bfs visited ((distance, (x, y), lvl, justTeleported) :<| nodes)
+      | lvl == 100 = bfs visited nodes
+      | (x, y) == endPosition && lvl == 0 = distance
+      | lvl > 0 && isOuter (x, y) && justTeleported == False && (isJust $ telep Map.!? (x, y)) = bfs visited' ((distance + 1, telep ! (x, y), lvl - 1, True) :<| nodes)
+      | not (isOuter (x,y)) && justTeleported == False && (isJust $ telep Map.!? (x, y)) = bfs visited' ((distance + 1, telep ! (x, y), lvl + 1, True) :<| nodes)
+      | otherwise = bfs visited' (nodes >< Sequence.fromList toVisit)
+      where
+        isOuter (a, b) = a == maxX - 2 || b == maxY - 2 || a == 2 || b == 2
+        cell (a, b) = trace (show lvl ++ " | " ++ show (distance, (x, y)) ++ " " ++ show (a, b)) $ Map.findWithDefault '#' (a, b) maze
+        current = cell (x, y)
+        visited' = Set.insert (lvl, (x, y)) visited
+        toVisit = List.map (\(x', y') -> (distance + 1, (x', y'), lvl, False)) .
+                    List.filter 
+                    (\dir -> not ((lvl, dir) `Set.member` visited) && cell dir == '.') $
+                    [(x, y + 1), (x, y - 1), (x + 1, y), (x - 1, y)]
